@@ -92,7 +92,7 @@ interface Meta : ComponentRegistrar, MetaPluginSyntax, InternalRegistry {
   /**
    * CLI Compiler [ComponentRegistrar] entry point.
    */
-  override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration) =
-    super.registerProjectComponents(project, configuration)
+  override fun registerProjectComponents(project: MockProject, configuration: CompilerConfiguration, logFilePath: String?) =
+    super.registerProjectComponents(project, configuration, logFilePath)
 
 }
