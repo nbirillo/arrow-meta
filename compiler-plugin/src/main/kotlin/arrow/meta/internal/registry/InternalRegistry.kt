@@ -28,6 +28,8 @@ import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.cli.common.messages.MessageRenderer
+import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
 import org.jetbrains.kotlin.codegen.ClassBuilderFactory
 import org.jetbrains.kotlin.codegen.ImplementationBodyCodegen
 import org.jetbrains.kotlin.codegen.StackValue
@@ -87,6 +89,8 @@ import org.jetbrains.kotlin.storage.StorageManager
 import org.jetbrains.kotlin.synthetic.JavaSyntheticPropertiesScope
 import org.jetbrains.kotlin.synthetic.SyntheticScopeProviderExtension
 import org.jetbrains.kotlin.types.KotlinType
+import java.io.File
+import java.io.PrintStream
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 import java.util.*
@@ -119,18 +123,20 @@ interface InternalRegistry : ConfigSyntax {
 
   fun registerProjectComponents(
     project: MockProject,
-    configuration: CompilerConfiguration
+    configuration: CompilerConfiguration,
+    logFilePath: String? = null
   ) {
     ide {
       println("registerProjectComponents!!!! CALLED in IDEA!!!! something is wrong.")
     }
-    registerMetaComponents(project, configuration)
+    registerMetaComponents(project, configuration, logFilePath = logFilePath)
   }
 
   fun registerMetaComponents(
     project: Project,
     configuration: CompilerConfiguration,
-    context: CompilerContext? = null
+    context: CompilerContext? = null,
+    logFilePath: String? = null
   ) {
     val extensionPoints = (Extensions.getArea(project) as ExtensionsAreaImpl).extensionPoints.toList()
     //println("Project allowed extensions: ${(project.extensionArea as ExtensionsAreaImpl).extensionPoints.toList().joinToString("\n")}")
@@ -149,6 +155,12 @@ interface InternalRegistry : ConfigSyntax {
           cli { configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE) }
         CompilerContext(project, messageCollector)
       }
+    logFilePath?.let {
+      val file = File(it)
+      file.createNewFile()
+      configuration.put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY,
+              PrintingMessageCollector(PrintStream(file.outputStream()), MessageRenderer.PLAIN_FULL_PATHS, true))
+    }
     ctx.configuration = configuration // TODO fix with better strategy to extract current config
     registerPostAnalysisContextEnrichment(project, ctx)
 
